@@ -10,6 +10,7 @@ class Bandit:
         self.arms = arm
         self.reward = 0.0
         self.actions = []
+        self.preferences = [0 for k in range(self.arms)]
         # As value in dict a list, (total reward, instances) to calculate avg
         self.actions_rewards = dict((k, [float(0), int(0)]) for k in range(self.arms))
         self.policy = None
@@ -75,22 +76,76 @@ class Bandit:
                     break
                 print("Invalid input...")
 
-    def get_action_greedy(self):
-        if self.e >= rd.randint(1, 100) or self.reward == 0:
-            return rd.randint(0, self.arms - 1)
+    # Implements the function argmax Gt(a)
+    # used for (e)greedy and optimistic initial values,
+    def get_max(self):
         ac = -1
         high = -1
         for action in self.actions_rewards.keys():
             li = self.actions_rewards[action]
-            if li[1] > 0 and li[0]/li[1] > high:
-                high = li[0]/li[1]
+            if li[1] == 0:
+                if li[0] > high:
+                    high = li[0]
+                    ac = action
+            elif li[1] > 0 and li[0] / li[1] > high:
+                high = li[0] / li[1]
                 ac = action
         return ac
+    # Gets action for Greedy
+    def get_action_greedy(self):
+        if self.e >= rd.randint(1, 100) or self.reward == 0:
+            return rd.randint(0, self.arms - 1)
+        return self.get_max()
 
-    def get_action(self):
+    # Gets action for Optimistic Initial Values
+    def get_action_oiv(self):
+        if self.reward == 0:  # initially return random action
+            return rd.randint(0, self.arms - 1)
+        return self.get_max()
+
+    # Gets action for Upper Confidence Bound
+    def get_action_ucb(self, i):
+        high = -1
+        ac = -1
+        # find argmax:
+        for se in self.actions_rewards.items():
+            if se[1][1] == 0:  # get rid of zero division by setting instances (Nt) as 1 initially
+                ins = 1
+            else:
+                ins = se[1][1]  # set instances (Nt), the number of times action has been taken
+            qta = se[1][0] / ins  # Qt(a), sum of rewards/instances
+            unc = self.c * np.sqrt((np.log(i + 1) / ins))  # uncertainty-part of the UCB equation
+            if (qta + unc) > high:
+                high = qta + unc
+                ac = se[0]
+        return ac
+
+    # Action preferences
+    def get_action_ap(self, i):
+        ac = -1
+        # Loop through the action preferences and return the action with the highest preference
+        for idx in range(len(self.preferences)):
+            if idx == 0:
+                high = self.preferences[0]
+                ac = 0
+            if self.preferences[idx] > high:
+                high = self.preferences[idx]
+                ac = idx
+        return ac
+
+    # Calls the function for the corresponding exploration methods
+    def get_action(self, i):
         if self.method == "e-greedy":
             return self.get_action_greedy()
+        elif self.method == "OIV":
+            return self.get_action_oiv()
+        elif self.method == "UCB":
+            return self.get_action_ucb(i)
+        elif self.method == "AP":
+            return self.get_action_ap(i)
 
+    # Updates the accumulated reward of an action and its instance count
+    # Also returns reward (which is useful for the Action Preferences method)
     def perform_action(self, action):
         # Gaussian bandit:
         if self.type == "GAU":
@@ -109,8 +164,13 @@ class Bandit:
 
     def train(self):
         for i in range(100000):
-            a = self.get_action()
-            self.perform_action(a)
+            a = self.get_action(i)
+            #  if method is Action Preferences, preference of the action taken must be updated as well
+            if self.method == "AP":
+                self.update_preferences(self.perform_action(a), a, i)  # param: reward, action, timestep
+            else:
+                self.perform_action(a)
+
         for se in self.actions_rewards.items():
             if se[1][1] == 0:  # zero instance of action, meaning action never used
                 print(se, "na")
@@ -127,7 +187,7 @@ def run_bandit(arms, sort):
     bandit = Bandit(arms, sort)
     if int(i) == 1:
         bandit.e_greedy()
-        print("e-greedy")
+        # print("e-greedy")
     elif int(i) == 2:
         bandit.optimistic()
         # print("OIV")
@@ -136,4 +196,5 @@ def run_bandit(arms, sort):
         bandit.ucb()
     elif int(i) == 4:
         print("AP")
+        bandit.ap()
     bandit.train()
