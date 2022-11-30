@@ -1,6 +1,5 @@
 import random as rd
 import numpy as np
-import math as meth
 
 
 class Bandit:
@@ -10,7 +9,7 @@ class Bandit:
         self.arms = arm
         self.reward = 0.0
         self.actions = []
-        self.preferences = [0 for k in range(self.arms)]
+        self.preferences = [0 for i in range(self.arms)]
         # As value in dict a list, (total reward, instances) to calculate avg
         self.actions_rewards = dict((k, [float(0), int(0)]) for k in range(self.arms))
         self.policy = None
@@ -26,20 +25,31 @@ class Bandit:
             self.preferences[k] = 0
 
     # Policy of action based on Softmax/Boltzmann distribution, used for updating preferences
-    def pi(self, action):
+    def pi(self):
+        ret = [0 for i in range(self.arms)]
         div = 0
         for k in range(self.arms):
             div += np.exp(self.preferences[k])
-        return np.exp(self.preferences[action]) / div
+        for a in range(self.arms):
+            ret[a] = np.exp(self.preferences[a]) / div
+        return ret
 
     # Updates action preferences for all actions
     def update_preferences(self, reward, action, timestep):
+        if timestep < 100:
+            print(np.array(self.preferences).sum())
+
+        pi = self.pi()
         for a in range(self.arms):
             # Next action taken is the current action, Ht+1(a').
-            if a == action:
-                new = self.preferences[a] + (1 / self.arms) * (reward - self.reward / (timestep + 1)) * (1 - self.pi(a))
+            if self.actions_rewards[a][1] != 0:
+                stepsize = 1 / (self.actions_rewards[a][1] * self.actions_rewards[a][1])
             else:
-                new = self.preferences[a] - (1 / self.arms) * (reward - self.reward / (timestep + 1)) * (self.pi(a))
+                stepsize = 1
+            if a == action:
+                new = self.preferences[a] + stepsize * (reward - self.reward / (timestep + 1)) * (1 - pi[a])
+            else:
+                new = self.preferences[a] - stepsize * (reward - self.reward / (timestep + 1)) * (pi[a])
             self.preferences[a] = new
 
     # Upper Confidence Bound
@@ -91,6 +101,7 @@ class Bandit:
                 high = li[0] / li[1]
                 ac = action
         return ac
+
     # Gets action for Greedy
     def get_action_greedy(self):
         if self.e >= rd.randint(1, 100) or self.reward == 0:
@@ -121,13 +132,11 @@ class Bandit:
         return ac
 
     # Action preferences
-    def get_action_ap(self, i):
-        ac = -1
+    def get_action_ap(self):
+        ac = 0
+        high = self.preferences[0]
         # Loop through the action preferences and return the action with the highest preference
         for idx in range(len(self.preferences)):
-            if idx == 0:
-                high = self.preferences[0]
-                ac = 0
             if self.preferences[idx] > high:
                 high = self.preferences[idx]
                 ac = idx
@@ -142,7 +151,7 @@ class Bandit:
         elif self.method == "UCB":
             return self.get_action_ucb(i)
         elif self.method == "AP":
-            return self.get_action_ap(i)
+            return self.get_action_ap()
 
     # Updates the accumulated reward of an action and its instance count
     # Also returns reward (which is useful for the Action Preferences method)
@@ -177,6 +186,7 @@ class Bandit:
             else:
                 print(se, se[1][0] / se[1][1])
 
+
 def run_bandit(arms, sort):
     while True:
         print("(e-)Greedy (1), Optimistic initial values (2), Upper-Confidence Bound (3), or Action Preferences (4)")
@@ -195,6 +205,6 @@ def run_bandit(arms, sort):
         # print("UCB")
         bandit.ucb()
     elif int(i) == 4:
-        print("AP")
+        #print("AP")
         bandit.ap()
     bandit.train()

@@ -1,11 +1,11 @@
 from bandit import run_bandit
 
 
-def run(i, a):
-    if i == 1:
-        run_bandit(a, "GAU")
-    if i == 2:
-        run_bandit(a, "BER")
+def run(bandit_type, arms):
+    if bandit_type == 1:
+        run_bandit(arms, "GAU")
+    if bandit_type == 2:
+        run_bandit(arms, "BER")
 
 
 if __name__ == "__main__":
