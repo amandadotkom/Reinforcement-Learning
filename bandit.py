@@ -1,3 +1,4 @@
+import csv
 import random as rd
 import numpy as np
 
@@ -58,13 +59,14 @@ class Bandit:
     # Upper Confidence Bound
     def ucb(self):
         self.method = "UCB"
-        while True:
-            print("Select c (above 0)")  # TRY TO NORMALIZE C
-            i = input()
-            if i.isnumeric() and float(i) >= 1:
-                self.c = int(i)
-                break
-            print("Invalid input...")
+        self.c = 3
+        # while True:
+        #     print("Select c (above 0)")  # TRY TO NORMALIZE C
+        #     i = input()
+        #     if i.isnumeric() and float(i) >= 1:
+        #         self.c = int(i)
+        #         break
+        #     print("Invalid input...")
 
     # Optimistic Initial Values
     def optimistic(self):
@@ -179,12 +181,24 @@ class Bandit:
             else:
                 self.perform_action(a)
 
+        file = open('output.csv', 'a', newline='')
+        writer = csv.writer(file)
+        row = ["Action", "Total Reward", "Instances", "Average Reward", "Mean sampling distribution"]
+        # writer.writerow(row)
         for se in self.actions_rewards.items():
+            row[0] = se[0]
+            row[1] = se[1][0]
+            row[2] = se[1][1]
+            row[4] = self.means[se[0]]
             if se[1][1] == 0:  # zero instance of action, meaning action never used
                 print(se, "na")
+                row[3] = "NA"
             else:
                 print(se, se[1][0] / se[1][1])
+                row[3] = se[1][0] / se[1][1]
+            # writer.writerow(row)
         print(self.means)
+        writer.writerow([self.reward / (100000*(np.array(self.means).max())) * 100])
 
 
 def run_bandit(arms, sort):
@@ -194,17 +208,18 @@ def run_bandit(arms, sort):
         if i.isnumeric() and int(i) in range(1, 5):
             break
         print("Invalid input...")
-    bandit = Bandit(arms, sort)
-    if int(i) == 1:
-        bandit.e_greedy()
-        # print("e-greedy")
-    elif int(i) == 2:
-        bandit.optimistic()
-        # print("OIV")
-    elif int(i) == 3:
-        # print("UCB")
-        bandit.ucb()
-    elif int(i) == 4:
-        # print("AP")
-        bandit.ap()
-    bandit.train()
+    for z in range(10):
+        bandit = Bandit(arms, sort)
+        if int(i) == 1:
+            bandit.e_greedy()
+            # print("e-greedy")
+        elif int(i) == 2:
+            bandit.optimistic()
+            # print("OIV")
+        elif int(i) == 3:
+            # print("UCB")
+            bandit.ucb()
+        elif int(i) == 4:
+            # print("AP")
+            bandit.ap()
+        bandit.train()
