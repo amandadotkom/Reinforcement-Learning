@@ -1,6 +1,7 @@
 import csv
 import random as rd
 import numpy as np
+from tqdm import tqdm
 
 
 class Bandit:
@@ -22,6 +23,7 @@ class Bandit:
             self.means = [np.random.normal(0, 2) for i in range(self.arms)]
         else:
             self.means = [int(np.random.normal(50, self.arms)) for i in range(self.arms)]
+        self.histogram = [0 for i in range(self.arms)]
 
     # Action preferences
     # Initializes preferences of all actions to zero
@@ -59,9 +61,9 @@ class Bandit:
     # Upper Confidence Bound
     def ucb(self):
         self.method = "UCB"
-        self.c = 3
+        self.c = 2
         # while True:
-        #     print("Select c (above 0)")  # TRY TO NORMALIZE C
+        #     print("Select c (above 0)")
         #     i = input()
         #     if i.isnumeric() and float(i) >= 1:
         #         self.c = int(i)
@@ -157,6 +159,7 @@ class Bandit:
     # Updates the accumulated reward of an action and its instance count
     # Also returns reward (which is useful for the Action Preferences method)
     def perform_action(self, action):
+        self.histogram[action] += 1
         # Gaussian bandit:
         if self.type == "GAU":
             # reward sampled from a normal distribution
@@ -183,22 +186,16 @@ class Bandit:
 
         file = open('output.csv', 'a', newline='')
         writer = csv.writer(file)
-        row = ["Action", "Total Reward", "Instances", "Average Reward", "Mean sampling distribution"]
+        row = ["Average Reward", "Percentage of correct action"]
         # writer.writerow(row)
-        for se in self.actions_rewards.items():
-            row[0] = se[0]
-            row[1] = se[1][0]
-            row[2] = se[1][1]
-            row[4] = self.means[se[0]]
-            if se[1][1] == 0:  # zero instance of action, meaning action never used
-                print(se, "na")
-                row[3] = "NA"
-            else:
-                print(se, se[1][0] / se[1][1])
-                row[3] = se[1][0] / se[1][1]
-            # writer.writerow(row)
-        print(self.means)
-        writer.writerow([self.reward / (100000*(np.array(self.means).max())) * 100])
+        hi = self.means[0]
+        ac = 0
+        for k in range(self.arms):
+            if self.means[k] > hi:
+                hi = self.means[k]
+                ac = k
+        writer.writerow([self.reward/100000, self.histogram[ac]/100000])
+        # writer.writerow([self.c, self.histogram[ac], self.reward / (100000*(np.array(self.means).max())) * 100])
 
 
 def run_bandit(arms, sort):
@@ -208,7 +205,7 @@ def run_bandit(arms, sort):
         if i.isnumeric() and int(i) in range(1, 5):
             break
         print("Invalid input...")
-    for z in range(10):
+    for z in tqdm(range(1000)):
         bandit = Bandit(arms, sort)
         if int(i) == 1:
             bandit.e_greedy()
