@@ -1,9 +1,11 @@
 import random
 import numpy as np
 
-class Game():
-    saved = np.zeros(6)
-    rolled = np.zeros(6)
+
+class Game:
+    def __init__(self):
+        self.saved = np.zeros(6)
+        self.rolled = np.zeros(6)
 
     def get_rolled(self):
         return self.rolled
@@ -11,14 +13,13 @@ class Game():
     def get_saved(self):
         return self.saved
 
-    #simulates rolling the dice
+    # simulates rolling the dice
     def roll(self):
-        sum_saved = np.sum(self.saved)
+        sum_saved = int(np.sum(self.saved))
 
-        for dice in range (5-sum_saved):  # 5 = num of dice
+        for dice in range(5-sum_saved):  # 5 = num of dice
             d = random.randint(1, 6)
-            self.rolled[d-1] += 1 
-    
+            self.rolled[d-1] += 1
 
     # for when agent alrdy performed action, reset rolled dice
     def update(self, chosen):
@@ -40,28 +41,28 @@ class Game():
                 return True
         return False
 
-    # sequence of 5
+    # sequence of 5, Doesnt check for sequence!?
     def check_lg_straight(self):
         cnt = 0
         for die in range(len(self.saved)):
-            if self.saved[die] == 1:
+            if self.saved[die] == 0:
+                cnt = 0
+            else:
                 cnt += 1
-        
-        if cnt == 5:
-            return True
-        else:
-            return False
+                if cnt == 5:
+                    return True
+        return False
     
     # sequence of 4
     def check_sm_straight(self):
         cnt = 0
         for die in range(len(self.saved)):
-            if self.saved[die] == 1:
+            if self.saved[die] == 0:
+                cnt = 0
+            else:
                 cnt += 1
-        
-        if cnt == 4:
-            return True
-
+                if cnt == 4:
+                    return True
         return False
 
     def check_thr_kind(self):
@@ -84,14 +85,7 @@ class Game():
             if self.saved[die] == 2:
                 flag = 1
 
-        if flag == 1 and self.check_thr_kind(self) == True:
+        if flag == 1 and self.check_thr_kind():
             return True
 
         return False
-
-   
-
-    
-
-
-
