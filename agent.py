@@ -63,6 +63,21 @@ class Agent:
                 new[int(dices[x] - 1)] += 1
         return new
 
+    def select_action_e_greedy(self, actions):
+        q_values = np.zeros(len(actions))
+        state_str = str(self.game.get_saved())
+        state_str += str(self.game.get_rolled())
+        for x in actions:
+            state_action = state_str + str(actions[x])
+            q_values[x] = self.Q_table.get(state_action)
+        print(q_values)
+        return q_values[0]
+
+    def play_round(self):
+        self.game.roll()
+        action = self.select_action_e_greedy(self.get_actions())
+        self.game.update(action)
+
     # writes Q-table, rewards, and instances to csv
     def store_progress(self):
         with open('qtable.csv', 'w') as f:

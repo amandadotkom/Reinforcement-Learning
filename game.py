@@ -21,18 +21,18 @@ class Game:
             d = random.randint(1, 6)
             self.rolled[d-1] += 1
 
-    # for when agent alrdy performed action, reset rolled dice
+    # for when agent already performed action, reset rolled dice
     def update(self, chosen):
         self.rolled = np.zeros(6)
         self.saved = np.add(self.saved, chosen)
 
     def get_reward(self):
-        check_yahtzee(self)
-        check_lg_straight(self)
-        check_sm_straight(self)
-        check_full_house(self)
-        check_thr_kind(self)
-        check_fr_kind(self)
+        self.check_yahtzee()
+        self.check_lg_straight()
+        self.check_sm_straight()
+        self.check_full_house()
+        self.check_thr_kind()
+        self.check_fr_kind()
 
     # 5 of a kind
     def check_yahtzee(self):
@@ -41,7 +41,7 @@ class Game:
                 return True
         return False
 
-    # sequence of 5, Doesnt check for sequence!?
+    # sequence of 5
     def check_lg_straight(self):
         cnt = 0
         for die in range(len(self.saved)):
