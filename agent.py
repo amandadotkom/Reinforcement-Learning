@@ -97,7 +97,6 @@ class Agent:
             probabilities[a] = pow(1+self.eps_exp, q)
             sum_e += pow(1+self.eps_exp, q)
         probabilities /= sum_e
-        print(np.amax(probabilities) - np.amin(probabilities))
         x = np.random.choice(range(len(actions)), p=probabilities)
         return actions[x]
 
