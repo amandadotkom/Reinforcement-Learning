@@ -7,12 +7,6 @@ class Game:
         self.saved = np.zeros(6)
         self.rolled = np.zeros(6)
 
-    def get_rolled(self):
-        return self.rolled
-
-    def get_saved(self):
-        return self.saved
-
     # simulates rolling the dice
     def roll(self):
         sum_saved = int(np.sum(self.saved))
@@ -26,10 +20,12 @@ class Game:
         self.rolled = np.zeros(6)
         self.saved = np.add(self.saved, chosen)
 
+    # reset after the end of a round
     def reset(self):
         self.rolled = np.zeros(6)
         self.saved = np.zeros(6)
 
+    # facade to check whether final dice selection is worth points
     def get_reward(self):
         reward = 0
         if self.check_yahtzee():
@@ -61,7 +57,7 @@ class Game:
     def check_yahtzee(self):
         for die in range(len(self.saved)):
             if self.saved[die] == 5:
-                print("YATHZEE!!!!!!!!!!!!!!!!!!!!!!")
+                #print("YATHZEE!!!!!!!!!!!!!!!!!!!!!!")
                 return True
         return False
 
@@ -91,6 +87,7 @@ class Game:
                     return True
         return False
 
+    # 3 of a kind
     def check_thr_kind(self):
         for die in range(len(self.saved)):
             if self.saved[die] == 3:
@@ -98,6 +95,7 @@ class Game:
                 return True
         return False
 
+    # 4 of a kind
     def check_fr_kind(self):
         for die in range(len(self.saved)):
             if self.saved[die] == 4:
@@ -105,6 +103,7 @@ class Game:
                 return True
         return False
 
+    # full house, 3 of a kind + 2 of a kind
     def check_full_house(self):
         flag = 0
         for die in range(len(self.saved)):

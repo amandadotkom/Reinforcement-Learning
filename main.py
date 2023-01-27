@@ -7,9 +7,9 @@ if __name__ == "__main__":
     method = 0
     epsilon_exploit = 0
     while True:
-        print("Action selection?: e-greedy (1) or softmax (2)")
+        print("Action selection?: e-greedy (1) or softmax (2) or explore (3)")
         method = input()
-        if method.isnumeric() and int(method) in range(1, 3):
+        if method.isnumeric() and int(method) in range(1, 4):
             break
         print("Invalid input...")
 
@@ -40,6 +40,8 @@ if __name__ == "__main__":
 
     game = Game()
     agent = Agent(game, int(method), float(epsilon_exploit))
+
+    # run for entered amount of time
     while True:
         time_to_run = input("How many minutes?")
         if time_to_run.isdigit():
@@ -47,13 +49,19 @@ if __name__ == "__main__":
         print("Enter Integer")
 
     t_end = time.time() + 60 * int(time_to_run)
+    t_save = time.time() + 1200
     avg_reward = 0
     rounds = 0
     while time.time() < t_end:
         avg_reward += agent.play_round()
         rounds += 1
+        # save every 20 minutes
+        if time.time() > t_save:
+            t_save += 1200
+            agent.store_progress()
 
 
+    # print average score
     if rounds != 0:
         print("Avg reward over {} minutes is {}".format(time_to_run, avg_reward/rounds))
 

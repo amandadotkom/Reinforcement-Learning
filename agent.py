@@ -36,8 +36,8 @@ class Agent:
     # key: [saved][rolled][action]  value: [reward]
     # [saved][rolled]: state, [action]: action, [reward]: Q-value
     def create_table_entries(self, actions):
-        state_str = str(self.game.get_saved())
-        state_str += str(self.game.get_rolled())
+        state_str = str(self.game.saved)
+        state_str += str(self.game.rolled)
         for action in actions:
             state_action = state_str + str(action)
             if state_action not in self.Q_table.keys():
@@ -45,9 +45,10 @@ class Agent:
                 self.rewards[state_action] = 0
                 self.instances[state_action] = 0
 
+    # updates the Q-table, instance table, and reward table when a certain action is performed
     def update_q_table(self, pairs, reward):
         if len(pairs) == 2:
-            self.rewards[pairs[0]] += reward * 0.8
+            self.rewards[pairs[0]] += reward * 0.8  # gamma = 0.8
             self.rewards[pairs[1]] += reward
             self.instances[pairs[0]] += 1
             self.instances[pairs[1]] += 1
@@ -61,7 +62,7 @@ class Agent:
 
     # returns list of all possible actions from the rolled dices.
     def get_actions(self):
-        histo_dices = copy(self.game.get_rolled())
+        histo_dices = copy(self.game.rolled)
         visual_dices = self.convert_dice_representation(histo_dices)
         actions = []
         for L in range(len(visual_dices) + 1):
@@ -86,9 +87,10 @@ class Agent:
                 new[int(dices[x] - 1)] += 1
         return new
 
+    # softmax action selection
     def select_action_softmax(self, actions):
-        state_str = str(self.game.get_saved())
-        state_str += str(self.game.get_rolled())
+        state_str = str(self.game.saved)
+        state_str += str(self.game.rolled)
         probabilities = np.zeros(len(actions))
         sum_e = 0
         for a in range(len(actions)):
@@ -100,11 +102,21 @@ class Agent:
         x = np.random.choice(range(len(actions)), p=probabilities)
         return actions[x]
 
+    # exploration action selection, returning the least explored action
+    def select_action_explore(self, actions):
+        state_str = str(self.game.saved)
+        state_str += str(self.game.rolled)
+        instances = np.zeros(len(actions))
+        for a in range(len(actions)):
+            state_action = state_str + str(actions[a])
+            instances[a] = self.instances.get(state_action)
+        return actions[np.argmin(instances)]
 
+    # epsilon-greedy action selection
     def select_action_e_greedy(self, actions):
         q_values = np.zeros(len(actions))
-        state_str = str(self.game.get_saved())
-        state_str += str(self.game.get_rolled())
+        state_str = str(self.game.saved)
+        state_str += str(self.game.rolled)
         for x in range(len(actions)):
             state_action = state_str + str(actions[x])
             q_values[x] = self.Q_table.get(state_action)
@@ -116,32 +128,36 @@ class Agent:
             rand = random.randint(0, len(actions)-1)
             return actions[rand]
 
+    # action selection distribution, calls an action selection method
+    # based on selected action selection algorithm
     def select_action(self, actions):
         if self.action_selection == 1:
             return self.select_action_e_greedy(actions)
         if self.action_selection == 2:
             return self.select_action_softmax(actions)
+        if self.action_selection == 3:
+            return self.select_action_explore(actions)
+
+    # plays 1 round of 'Simplified' yahtzee
     def play_round(self):
         turn = 1
-        state_action_pairs = {}
-        while turn <= 2 and np.sum(self.game.saved) < 5:
+        state_action_pairs = {} # store state-action pairs of this episode
+        while turn <= 2 and np.sum(self.game.saved) < 5:    # roll at max 2 turns
             self.game.roll()
             actions = self.get_actions()
             self.create_table_entries(actions)
             action = self.select_action(actions)
-            state_str = str(self.game.get_saved())
-            state_str += str(self.game.get_rolled())
+            state_str = str(self.game.saved)
+            state_str += str(self.game.rolled)
             state_action = state_str + str(action)
             state_action_pairs[turn-1] = state_action
             self.game.update(action)
             turn += 1
-        if np.sum(self.game.saved) < 5:
+        if np.sum(self.game.saved) < 5: # if necessary, roll 3rd time, no actions possible
             self.game.roll()
             self.game.update(self.game.rolled)
-        # print(self.convert_dice_representation(copy(self.game.saved)))
-        reward = self.game.get_reward()
-        if reward > 0:
-            self.update_q_table(state_action_pairs, reward)
+        reward = self.game.get_reward() # check final dice selection
+        self.update_q_table(state_action_pairs, reward)
         self.game.reset()
         return reward
 
