@@ -61,7 +61,7 @@ if __name__ == "__main__":
             agent.store_progress()
 
 
-    # print average score
+    # print average score over time
     if rounds != 0:
         print("Avg reward over {} minutes is {}".format(time_to_run, avg_reward/rounds))
 

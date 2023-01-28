@@ -48,7 +48,7 @@ class Agent:
     # updates the Q-table, instance table, and reward table when a certain action is performed
     def update_q_table(self, pairs, reward):
         if len(pairs) == 2:
-            self.rewards[pairs[0]] += reward * 0.8  # gamma = 0.8
+            self.rewards[pairs[0]] += reward
             self.rewards[pairs[1]] += reward
             self.instances[pairs[0]] += 1
             self.instances[pairs[1]] += 1
